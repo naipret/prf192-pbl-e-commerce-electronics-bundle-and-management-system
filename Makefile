@@ -1,19 +1,14 @@
 ifeq ($(OS),Windows_NT)
+SHELL := cmd.exe
 EXE_EXT := .exe
 FIX_PATH = $(subst /,\,$1)
-ifeq ($(SHELL),cmd.exe)
 MKDIR = if not exist $(call FIX_PATH,$1) mkdir $(call FIX_PATH,$1)
 RM = if exist $(call FIX_PATH,$1) rmdir /S /Q $(call FIX_PATH,$1)
-else
-MKDIR = mkdir -p $1
-RM = rm -rf $1
-endif
 else
 EXE_EXT :=
 MKDIR = mkdir -p $1
 RM = rm -rf $1
 endif
-
 
 INC_DIR := include
 SRC_DIR := src
@@ -45,14 +40,14 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BIN_DIR):
-	$(kinf) $(call MKDIR,$(BIN_DIR))
+	@$(call MKDIR,$(BIN_DIR))
 
 $(OBJ_DIR):
-	$(kinf) $(call MKDIR,$(OBJ_DIR))
+	@$(call MKDIR,$(OBJ_DIR))
 
 clean:
-	$(call RM,$(OBJ_DIR))
-	$(call RM,$(BIN_DIR))
+	@$(call RM,$(OBJ_DIR))
+	@$(call RM,$(BIN_DIR))
 
 format:
 	clang-format -i $(INC_DIR)/*.h $(SRC_DIR)/*.c
