@@ -78,20 +78,23 @@ int verify_admin_login(const char *username, const char *password) {
   }
   fclose(f);
 
-  /* De-obfuscate password */
-  char deobfuscated[MAX_PASSWORD_LEN] = {0};
-  size_t hex_len = strlen(stored_hex);
-  if (hex_len % 2 != 0 || hex_len / 2 >= MAX_PASSWORD_LEN) {
+  if (strcmp(stored_user, username) != 0) {
     return 0;
   }
-  for (size_t i = 0; i < hex_len; i += 2) {
-    char hex_byte[3] = {stored_hex[i], stored_hex[i + 1], '\0'};
-    unsigned char val = (unsigned char)strtol(hex_byte, NULL, 16);
-    deobfuscated[i / 2] = (char)(val ^ 0x5A);
+
+  /* Obfuscate the input password to compare directly */
+  char input_hex[(MAX_PASSWORD_LEN * 2) + 1] = {0};
+  size_t input_len = strlen(password);
+  if (input_len >= MAX_PASSWORD_LEN) {
+    return 0;
+  }
+  for (size_t i = 0; i < input_len; i++) {
+    unsigned char c = (unsigned char)password[i];
+    unsigned char obfuscated = (unsigned char)(c ^ 0x5A);
+    sprintf(input_hex + (i * 2), "%02X", obfuscated);
   }
 
-  if (strcmp(stored_user, username) == 0 &&
-      strcmp(deobfuscated, password) == 0) {
+  if (strcmp(stored_hex, input_hex) == 0) {
     return 1;
   }
   return 0;
@@ -132,4 +135,35 @@ void run_admin_registration_wizard(void) {
   } else {
     printf("Error: Failed to save admin credentials!\n");
   }
+}
+
+int run_admin_login_loop(void) {
+  char username[128];
+  char password[128];
+  int attempts = 0;
+
+  while (attempts < 3) {
+    get_safe_string("Enter Admin Username (0 to cancel): ", username,
+                    sizeof(username));
+    if (strcmp(username, "0") == 0) {
+      return 0;
+    }
+
+    get_safe_string("Enter Admin Password (0 to cancel): ", password,
+                    sizeof(password));
+    if (strcmp(password, "0") == 0) {
+      return 0;
+    }
+
+    if (verify_admin_login(username, password)) {
+      printf("Login successful!\n");
+      return 1;
+    }
+
+    attempts++;
+    printf("Invalid username or password.\n");
+  }
+
+  printf("Too many failed attempts! Returning to Customer Menu.\n");
+  return 0;
 }
