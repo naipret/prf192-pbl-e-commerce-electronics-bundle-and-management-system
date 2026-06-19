@@ -20,7 +20,8 @@ static void finalize_order_metadata(Order *ord, const Order *orders, int count,
  */
 static int process_product_order(Product products[], int product_count,
                                  const Order *new_order, float *item_price) {
-  int prod_idx = find_product_by_id(products, product_count, new_order->item_id);
+  int prod_idx =
+      find_product_by_id(products, product_count, new_order->item_id);
   if (prod_idx == -1) {
     printf("Error: Product ID %d does not exist.\n", new_order->item_id);
     return 0;
@@ -62,8 +63,10 @@ static int process_bundle_order(Product products[], int product_count,
       if (prod_idx != -1) {
         int stock = products[prod_idx].stock_quantity;
         if (stock < new_order->quantity) {
-          printf("  - Product '%s' (ID %d) has insufficient stock. Requested: %d, Available: %d.\n",
-                 products[prod_idx].product_name, prod_id, new_order->quantity, stock);
+          printf("  - Product '%s' (ID %d) has insufficient stock. Requested: "
+                 "%d, Available: %d.\n",
+                 products[prod_idx].product_name, prod_id, new_order->quantity,
+                 stock);
         }
       } else {
         printf("  - Product ID %d in bundle does not exist.\n", prod_id);
@@ -97,7 +100,8 @@ static void finalize_order_metadata(Order *ord, const Order *orders, int count,
     }
     ord->order_id = max_id + 1;
   }
-  strncpy(ord->customer_name, new_order->customer_name, sizeof(ord->customer_name) - 1);
+  strncpy(ord->customer_name, new_order->customer_name,
+          sizeof(ord->customer_name) - 1);
   ord->customer_name[sizeof(ord->customer_name) - 1] = '\0';
   ord->item_id = new_order->item_id;
   ord->is_bundle = new_order->is_bundle;
@@ -105,7 +109,8 @@ static void finalize_order_metadata(Order *ord, const Order *orders, int count,
   ord->total_price = item_price * (float)new_order->quantity;
 
   if (strlen(new_order->order_date) > 0) {
-    strncpy(ord->order_date, new_order->order_date, sizeof(ord->order_date) - 1);
+    strncpy(ord->order_date, new_order->order_date,
+            sizeof(ord->order_date) - 1);
     ord->order_date[sizeof(ord->order_date) - 1] = '\0';
   } else {
     time_t t = time(NULL);
@@ -122,7 +127,8 @@ static void finalize_order_metadata(Order *ord, const Order *orders, int count,
 int create_order(Order orders[], int *count, Product products[],
                  int product_count, const Bundle bundles[], int bundle_count,
                  const Order *new_order) {
-  if (orders == NULL || count == NULL || products == NULL || bundles == NULL || new_order == NULL) {
+  if (orders == NULL || count == NULL || products == NULL || bundles == NULL ||
+      new_order == NULL) {
     return 0;
   }
   if (*count < 0 || *count >= MAX_ORDERS) {
@@ -146,11 +152,13 @@ int create_order(Order orders[], int *count, Product products[],
 
   // 3. Process Product/Bundle Order
   if (new_order->is_bundle == 0) {
-    if (!process_product_order(products, product_count, new_order, &item_price)) {
+    if (!process_product_order(products, product_count, new_order,
+                               &item_price)) {
       return 0;
     }
   } else if (new_order->is_bundle == 1) {
-    if (!process_bundle_order(products, product_count, bundles, bundle_count, new_order, &item_price)) {
+    if (!process_bundle_order(products, product_count, bundles, bundle_count,
+                              new_order, &item_price)) {
       return 0;
     }
   } else {
@@ -159,7 +167,8 @@ int create_order(Order orders[], int *count, Product products[],
   }
 
   // 4. Finalize Metadata and append
-  finalize_order_metadata(&orders[*count], orders, *count, new_order, item_price);
+  finalize_order_metadata(&orders[*count], orders, *count, new_order,
+                          item_price);
   (*count)++;
   return 1;
 }
@@ -169,21 +178,21 @@ void display_order_history(const Order orders[], int count) {
     printf("\nNo orders found in history.\n");
     return;
   }
-  printf("\n=================================== ORDER HISTORY ===================================\n");
-  printf("%-8s | %-20s | %-8s | %-10s | %-8s | %-12s | %-10s\n",
-         "Order ID", "Customer Name", "Item ID", "Item Type", "Quantity", "Total Price", "Date");
-  printf("-------------------------------------------------------------------------------------\n");
+  printf("\n=================================== ORDER HISTORY "
+         "===================================\n");
+  printf("%-8s | %-20s | %-8s | %-10s | %-8s | %-12s | %-10s\n", "Order ID",
+         "Customer Name", "Item ID", "Item Type", "Quantity", "Total Price",
+         "Date");
+  printf("---------------------------------------------------------------------"
+         "----------------\n");
   for (int i = 0; i < count; i++) {
     printf("%-8d | %-20s | %-8d | %-10s | %-8d | $%-11.2f | %-10s\n",
-           orders[i].order_id,
-           orders[i].customer_name,
-           orders[i].item_id,
-           orders[i].is_bundle ? "Bundle" : "Product",
-           orders[i].quantity,
-           (double)orders[i].total_price,
-           orders[i].order_date);
+           orders[i].order_id, orders[i].customer_name, orders[i].item_id,
+           orders[i].is_bundle ? "Bundle" : "Product", orders[i].quantity,
+           (double)orders[i].total_price, orders[i].order_date);
   }
-  printf("================================================================================-----\n");
+  printf("====================================================================="
+         "===========-----\n");
 }
 
 void print_revenue_report(const Order orders[], int order_count,
