@@ -1,32 +1,210 @@
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
 
+#include "bundle.h"
 #include "order.h"
+#include "product.h"
 
-int create_order(Order orders[], const int *count, Product products[],
+/* Static helper function prototypes */
+static int process_product_order(Product products[], int product_count,
+                                 const Order *new_order, float *item_price);
+static int process_bundle_order(Product products[], int product_count,
+                                const Bundle bundles[], int bundle_count,
+                                const Order *new_order, float *item_price);
+static void finalize_order_metadata(Order *ord, const Order *orders, int count,
+                                    const Order *new_order, float item_price);
+
+/**
+ * @brief Processes and validates a product-based order.
+ */
+static int process_product_order(Product products[], int product_count,
+                                 const Order *new_order, float *item_price) {
+  int prod_idx = find_product_by_id(products, product_count, new_order->item_id);
+  if (prod_idx == -1) {
+    printf("Error: Product ID %d does not exist.\n", new_order->item_id);
+    return 0;
+  }
+  Product *prod = &products[prod_idx];
+  if (prod->stock_quantity < new_order->quantity) {
+    printf("Error: Insufficient stock available.\n");
+    return 0;
+  }
+  prod->stock_quantity -= new_order->quantity;
+  *item_price = prod->price;
+  return 1;
+}
+
+/**
+ * @brief Processes and validates a bundle-based order.
+ */
+static int process_bundle_order(Product products[], int product_count,
+                                const Bundle bundles[], int bundle_count,
+                                const Order *new_order, float *item_price) {
+  int bundle_idx = -1;
+  for (int i = 0; i < bundle_count; i++) {
+    if (bundles[i].bundle_id == new_order->item_id) {
+      bundle_idx = i;
+      break;
+    }
+  }
+  if (bundle_idx == -1) {
+    printf("Error: Bundle ID %d does not exist.\n", new_order->item_id);
+    return 0;
+  }
+  const Bundle *bundle = &bundles[bundle_idx];
+  int virtual_stock = get_virtual_bundle_stock(bundle, products, product_count);
+  if (virtual_stock < new_order->quantity) {
+    printf("Error: Insufficient stock available.\n");
+    for (int i = 0; i < bundle->product_count; i++) {
+      int prod_id = bundle->product_ids[i];
+      int prod_idx = find_product_by_id(products, product_count, prod_id);
+      if (prod_idx != -1) {
+        int stock = products[prod_idx].stock_quantity;
+        if (stock < new_order->quantity) {
+          printf("  - Product '%s' (ID %d) has insufficient stock. Requested: %d, Available: %d.\n",
+                 products[prod_idx].product_name, prod_id, new_order->quantity, stock);
+        }
+      } else {
+        printf("  - Product ID %d in bundle does not exist.\n", prod_id);
+      }
+    }
+    return 0;
+  }
+  for (int i = 0; i < bundle->product_count; i++) {
+    int prod_id = bundle->product_ids[i];
+    int prod_idx = find_product_by_id(products, product_count, prod_id);
+    if (prod_idx != -1) {
+      products[prod_idx].stock_quantity -= new_order->quantity;
+    }
+  }
+  *item_price = calculate_bundle_price(bundle, products, product_count);
+  return 1;
+}
+
+/**
+ * @brief Populates metadata for the newly placed order.
+ */
+static void finalize_order_metadata(Order *ord, const Order *orders, int count,
+                                    const Order *new_order, float item_price) {
+  ord->order_id = new_order->order_id;
+  if (ord->order_id <= 0) {
+    int max_id = 0;
+    for (int i = 0; i < count; i++) {
+      if (orders[i].order_id > max_id) {
+        max_id = orders[i].order_id;
+      }
+    }
+    ord->order_id = max_id + 1;
+  }
+  strncpy(ord->customer_name, new_order->customer_name, sizeof(ord->customer_name) - 1);
+  ord->customer_name[sizeof(ord->customer_name) - 1] = '\0';
+  ord->item_id = new_order->item_id;
+  ord->is_bundle = new_order->is_bundle;
+  ord->quantity = new_order->quantity;
+  ord->total_price = item_price * (float)new_order->quantity;
+
+  if (strlen(new_order->order_date) > 0) {
+    strncpy(ord->order_date, new_order->order_date, sizeof(ord->order_date) - 1);
+    ord->order_date[sizeof(ord->order_date) - 1] = '\0';
+  } else {
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    if (tm_info != NULL) {
+      strftime(ord->order_date, sizeof(ord->order_date), "%Y-%m-%d", tm_info);
+    } else {
+      strncpy(ord->order_date, "2026-06-19", sizeof(ord->order_date) - 1);
+      ord->order_date[sizeof(ord->order_date) - 1] = '\0';
+    }
+  }
+}
+
+int create_order(Order orders[], int *count, Product products[],
                  int product_count, const Bundle bundles[], int bundle_count,
                  const Order *new_order) {
-  (void)orders;
-  (void)count;
-  (void)products;
-  (void)product_count;
-  (void)bundles;
-  (void)bundle_count;
-  (void)new_order;
-  return 0;
+  if (orders == NULL || count == NULL || products == NULL || bundles == NULL || new_order == NULL) {
+    return 0;
+  }
+  if (*count < 0 || *count >= MAX_ORDERS) {
+    printf("Error: Order limit reached or invalid count.\n");
+    return 0;
+  }
+
+  // 1. Validate quantity
+  if (new_order->quantity <= 0) {
+    printf("Error: Order quantity must be greater than 0.\n");
+    return 0;
+  }
+
+  // 2. Validate customer name
+  if (strlen(new_order->customer_name) == 0) {
+    printf("Error: Customer name cannot be empty.\n");
+    return 0;
+  }
+
+  float item_price = 0.0F;
+
+  // 3. Process Product/Bundle Order
+  if (new_order->is_bundle == 0) {
+    if (!process_product_order(products, product_count, new_order, &item_price)) {
+      return 0;
+    }
+  } else if (new_order->is_bundle == 1) {
+    if (!process_bundle_order(products, product_count, bundles, bundle_count, new_order, &item_price)) {
+      return 0;
+    }
+  } else {
+    printf("Error: Invalid item type flag (is_bundle must be 0 or 1).\n");
+    return 0;
+  }
+
+  // 4. Finalize Metadata and append
+  finalize_order_metadata(&orders[*count], orders, *count, new_order, item_price);
+  (*count)++;
+  return 1;
 }
 
 void display_order_history(const Order orders[], int count) {
-  (void)orders;
-  (void)count;
+  if (orders == NULL || count <= 0) {
+    printf("\nNo orders found in history.\n");
+    return;
+  }
+  printf("\n=================================== ORDER HISTORY ===================================\n");
+  printf("%-8s | %-20s | %-8s | %-10s | %-8s | %-12s | %-10s\n",
+         "Order ID", "Customer Name", "Item ID", "Item Type", "Quantity", "Total Price", "Date");
+  printf("-------------------------------------------------------------------------------------\n");
+  for (int i = 0; i < count; i++) {
+    printf("%-8d | %-20s | %-8d | %-10s | %-8d | $%-11.2f | %-10s\n",
+           orders[i].order_id,
+           orders[i].customer_name,
+           orders[i].item_id,
+           orders[i].is_bundle ? "Bundle" : "Product",
+           orders[i].quantity,
+           (double)orders[i].total_price,
+           orders[i].order_date);
+  }
+  printf("================================================================================-----\n");
 }
 
 void print_revenue_report(const Order orders[], int order_count,
                           const Product products[], int product_count,
                           const Bundle bundles[], int bundle_count) {
-  (void)orders;
-  (void)order_count;
   (void)products;
   (void)product_count;
   (void)bundles;
   (void)bundle_count;
+
+  if (orders == NULL || order_count <= 0) {
+    printf("\n--- REVENUE REPORT ---\n");
+    printf("Total Orders: 0\n");
+    printf("Total Revenue: $0.00\n");
+    return;
+  }
+  float total_revenue = 0.0F;
+  for (int i = 0; i < order_count; i++) {
+    total_revenue += orders[i].total_price;
+  }
+  printf("\n--- REVENUE REPORT ---\n");
+  printf("Total Orders: %d\n", order_count);
+  printf("Total Revenue: $%.2f\n", (double)total_revenue);
 }

@@ -30,9 +30,14 @@ int delete_product(Product products[], const int *count, int id,
 }
 
 int find_product_by_id(const Product products[], int count, int id) {
-  (void)products;
-  (void)count;
-  (void)id;
+  if (products == NULL || count < 0 || id <= 0) {
+    return -1;
+  }
+  for (int i = 0; i < count; i++) {
+    if (products[i].product_id == id) {
+      return i;
+    }
+  }
   return -1;
 }
 
