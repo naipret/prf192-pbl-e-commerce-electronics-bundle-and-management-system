@@ -17,7 +17,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ## Detailed Story Backlog
 
-### Story 1.1: Quality Infrastructure & Safe Input Library
+### Quality Infrastructure & Safe Input Library
 
 * **Assignee**: Member 1
 * **Description**: Create compile directives, clang formatter configs, and robust console inputs wrappers inside `utils.c` and `utils.h`. This library will prevent invalid float/int inputs from causing infinite loops and standardizes console buffer clearing.
@@ -30,7 +30,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 2.1: Admin Registration Setup & Security Login
+### Admin Registration Setup & Security Login
 
 * **Assignee**: Member 1
 * **Description**: Implement first-run detection protocols. If credentials files do not exist, force registration. Create credential check logic with maximum attempts limits and cancel overrides.
@@ -43,7 +43,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 3.1: Product Database CRUD Management
+### Product Database CRUD Management
 
 * **Assignee**: Member 2
 * **Description**: Create product structures and implement data modification logic. Products must be stored in a static array with size bounds check.
@@ -56,7 +56,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 4.1: Dynamic Bundle Design & Virtual Stock Calculation
+### Dynamic Bundle Design & Virtual Stock Calculation
 
 * **Assignee**: Member 3
 * **Description**: Define the Bundle struct. Implement adding products to bundle lists, duplicate protection, and calculate dynamic prices and virtual stock levels.
@@ -69,7 +69,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 5.1: Database Search & Bubble Sort Filters
+### Database Search & Bubble Sort Filters
 
 * **Assignee**: Member 2
 * **Description**: Implement product lookup capabilities. Includes case-insensitive name matching and Bubble Sort algorithms for sorting results.
@@ -80,7 +80,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 6.1: Order Creation & Inventory Stock Deductions
+### Order Creation & Inventory Stock Deductions
 
 * **Assignee**: Member 4
 * **Description**: Develop checkout routines. Orders can be single products or bundle combos. Stock adjustments must be computed correctly, deducting items individually.
@@ -92,7 +92,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 7.1: Business Intelligence Sales Reporting
+### Business Intelligence Sales Reporting
 
 * **Assignee**: Member 3
 * **Description**: Read order logs to calculate business revenue summaries.
@@ -104,7 +104,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 8.1: Safe Transactional I/O Persistence
+### Safe Transactional I/O Persistence
 
 * **Assignee**: Member 4
 * **Description**: Implement file load and save features with fail-safe transactions to prevent data corruption.
@@ -116,7 +116,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 9.1: Console UI Layouts & Escape Handlers
+### Console UI Layouts & Escape Handlers
 
 * **Assignee**: Member 1
 * **Description**: Set up the main CLI menus. Implement screen output borders, clean grid tabulations, and the unified escape key `0`.
@@ -128,7 +128,7 @@ This document maps the 9 Epics into concrete Agile stories. The stories are divi
 
 ---
 
-### Story 10.1: DevOps Build Configurations
+### DevOps Build Configurations
 
 * **Assignee**: Member 4
 * **Description**: Integrate the optional multi-stage Docker build container and setup the GitHub Action CI build pipeline.
