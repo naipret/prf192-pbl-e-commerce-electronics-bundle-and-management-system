@@ -42,6 +42,6 @@ CheckOptions:
     value: lower_case
 
   - key: readability-identifier-naming.TypedefCase
-    value: lower_case
+    value: CamelCase
   - key: readability-identifier-naming.PublicMemberCase
     value: lower_case
