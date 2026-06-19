@@ -14,7 +14,7 @@ int create_bundle(Bundle bundles[], int *count, const Bundle *new_bundle) {
     cont();
     return 0;
   }
-  if (new_bundle->discount_rate < 0.0f || new_bundle->discount_rate > 1.0f) {
+  if (new_bundle->discount_rate < 0.0F || new_bundle->discount_rate > 1.0F) {
     printf("Discount rate must be between 0.0 and 1.0.\n");
     cont();
     return 0;
@@ -119,9 +119,9 @@ int remove_product_from_bundle(Bundle bundles[], int *bundle_count,
 float calculate_bundle_price(const Bundle *bundle, const Product products[],
                              int product_count) {
   if (bundle == NULL || products == NULL || product_count < 0) {
-    return 0.0f;
+    return 0.0F;
   }
-  float sum = 0.0f;
+  float sum = 0.0F;
   for (int i = 0; i < bundle->product_count; i++) {
     int prod_id = bundle->product_ids[i];
     int prod_idx = find_product_by_id(products, product_count, prod_id);
@@ -129,7 +129,7 @@ float calculate_bundle_price(const Bundle *bundle, const Product products[],
       sum += products[prod_idx].price;
     }
   }
-  return sum * (1.0f - bundle->discount_rate);
+  return sum * (1.0F - bundle->discount_rate);
 }
 
 int get_virtual_bundle_stock(const Bundle *bundle, const Product products[],
@@ -181,7 +181,7 @@ void display_all_bundles(const Bundle bundles[], int count,
     int virtual_stock =
         get_virtual_bundle_stock(&bundles[i], products, product_count);
 
-    float discount_percentage = bundles[i].discount_rate * 100.0f;
+    float discount_percentage = bundles[i].discount_rate * 100.0F;
 
     printf("| %-2d | %-25s | %-10.1f%% | %-13.2f | %-13d |\n",
            bundles[i].bundle_id, bundles[i].bundle_name,
