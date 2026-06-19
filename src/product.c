@@ -199,7 +199,7 @@ void display_all_products(const Product products[], int count) {
   printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
          "Category", "Brand", "Price", "Stock");
   printf("---------------------------------------------------------------------"
-         "---------------------------------\n");
+         "--------------------------------\n");
   for (int i = 0; i < count; i++) {
     printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
            products[i].product_id, products[i].product_name,
