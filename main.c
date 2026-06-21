@@ -1,6 +1,4 @@
 #include <ctype.h>
-#include <errno.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,16 +64,46 @@ typedef struct {
 #ifndef ADMIN_H
 #define ADMIN_H
 
+
+/**
+ * @brief Checks if the admin credentials configuration file exists.
+ * @return 1 if setup is complete (file exists), 0 otherwise.
+ */
 int is_admin_setup_complete(void);
+
+/**
+ * @brief Obfuscates the password and saves credentials to the admin config
+ * file.
+ * @param username The plain-text admin username to register.
+ * @param password The plain-text admin password to obfuscate and register.
+ * @return 1 on success, 0 on failure.
+ */
 int setup_admin_credentials(const char *username, const char *password);
+
+/**
+ * @brief Reads credentials, obfuscates the input password, and compares both.
+ * @param username The plain-text username input.
+ * @param password The plain-text password input.
+ * @return 1 if credentials verify successfully, 0 otherwise.
+ */
 int verify_admin_login(const char *username, const char *password);
+
+/**
+ * @brief Runs an interactive CLI wizard loop to set up admin credentials.
+ */
 void run_admin_registration_wizard(void);
+
+/**
+ * @brief Runs an interactive CLI login loop allowing up to 3 attempts.
+ * @return 1 on successful login, 0 if cancelled or locked out.
+ */
 int run_admin_login_loop(void);
 
 #endif /* ADMIN_H */
 
 #ifndef PRODUCT_H
 #define PRODUCT_H
+
 
 /**
  * @brief Adds a new product to the inventory array after validation.
@@ -131,10 +159,40 @@ int find_product_by_id(const Product products[], int count, int id);
  */
 void display_all_products(const Product products[], int count);
 
+/**
+ * @brief Searches for products by name (case-insensitive substring match).
+ * @param products Array of product structures.
+ * @param count Current number of active products.
+ * @param query The string to search for.
+ */
+void search_product_by_name(const Product products[], int count,
+                            const char *query);
+
+/**
+ * @brief Filters products by category (matching strictly one of "Phone",
+ * "Laptop", "Tablet", "Accessory").
+ * @param products Array of product structures.
+ * @param count Current number of active products.
+ * @param category The category string to match.
+ */
+void filter_product_by_category(const Product products[], int count,
+                                const char *category);
+
+/**
+ * @brief Filters products by price range (MinPrice <= price <= MaxPrice).
+ * @param products Array of product structures.
+ * @param count Current number of active products.
+ * @param min_price Minimum price boundary.
+ * @param max_price Maximum price boundary.
+ */
+void filter_product_by_price(const Product products[], int count,
+                             float min_price, float max_price);
+
 #endif /* PRODUCT_H */
 
 #ifndef BUNDLE_H
 #define BUNDLE_H
+
 
 /**
  * @brief Creates a new bundle and appends it to the bundles array if valid.
@@ -208,6 +266,7 @@ void display_all_bundles(const Bundle bundles[], int count,
 #ifndef ORDER_H
 #define ORDER_H
 
+
 /**
  * @brief Validates and places a new order.
  *
@@ -258,10 +317,36 @@ void print_revenue_report(const Order orders[], int order_count,
 #ifndef FILE_IO_H
 #define FILE_IO_H
 
+
+/**
+ * @brief Saves the database containing products, bundles, orders, and admin
+ * credentials.
+ * @param products Array of current products.
+ * @param product_count Number of active products.
+ * @param bundles Array of current bundles.
+ * @param bundle_count Number of active bundles.
+ * @param orders Array of current orders.
+ * @param order_count Number of active orders.
+ * @param admin Pointer to the admin credentials.
+ * @return 1 on success, 0 on failure.
+ */
 int save_database(const Product products[], int product_count,
                   const Bundle bundles[], int bundle_count,
                   const Order orders[], int order_count,
                   const AdminCredentials *admin);
+
+/**
+ * @brief Loads the database containing products, bundles, orders, and admin
+ * credentials.
+ * @param products Array to populate with products.
+ * @param product_count Pointer to variable storing loaded products count.
+ * @param bundles Array to populate with bundles.
+ * @param bundle_count Pointer to variable storing loaded bundles count.
+ * @param orders Array to populate with orders.
+ * @param order_count Pointer to variable storing loaded orders count.
+ * @param admin Pointer to the admin credentials structure to populate.
+ * @return 1 on success, 0 on failure.
+ */
 int load_database(Product products[], const int *product_count,
                   Bundle bundles[], const int *bundle_count, Order orders[],
                   const int *order_count, AdminCredentials *admin);
@@ -331,18 +416,32 @@ int confirm_action(const char *message);
 #ifndef MENU_H
 #define MENU_H
 
+/**
+ * @brief Displays the interactive customer menu options loop.
+ */
 void display_customer_menu(void);
+
+/**
+ * @brief Displays the interactive admin menu options loop.
+ */
 void display_admin_menu(void);
+
+/**
+ * @brief Runs the main menu system, loading the DB and starting the customer
+ * menu.
+ */
 void run_menu_system(void);
 
 #endif /* MENU_H */
 
+
+
 static int validate_credential_string(const char *str, int max_len) {
-  size_t len = strlen(str);
-  if (len < 4 || len >= (size_t)max_len) {
+  int len = (int)strlen(str);
+  if (len < 4 || len >= max_len) {
     return 0;
   }
-  for (size_t i = 0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     if (isspace((unsigned char)str[i])) {
       return 0;
     }
@@ -390,21 +489,21 @@ int verify_admin_login(const char *username, const char *password) {
   char stored_user[MAX_USERNAME_LEN] = {0};
   char stored_hex[(MAX_PASSWORD_LEN * 2) + 2] = {0};
 
-  if (fgets(stored_user, sizeof(stored_user), f) == NULL) {
+  if (fgets(stored_user, (int)sizeof(stored_user), f) == NULL) {
     fclose(f);
     return 0;
   }
-  size_t user_idx = strcspn(stored_user, "\r\n");
-  if (user_idx < sizeof(stored_user)) {
+  int user_idx = (int)strcspn(stored_user, "\r\n");
+  if (user_idx < (int)sizeof(stored_user)) {
     stored_user[user_idx] = '\0';
   }
 
-  if (fgets(stored_hex, sizeof(stored_hex), f) == NULL) {
+  if (fgets(stored_hex, (int)sizeof(stored_hex), f) == NULL) {
     fclose(f);
     return 0;
   }
-  size_t hex_idx = strcspn(stored_hex, "\r\n");
-  if (hex_idx < sizeof(stored_hex)) {
+  int hex_idx = (int)strcspn(stored_hex, "\r\n");
+  if (hex_idx < (int)sizeof(stored_hex)) {
     stored_hex[hex_idx] = '\0';
   }
   fclose(f);
@@ -415,11 +514,11 @@ int verify_admin_login(const char *username, const char *password) {
 
   /* Obfuscate the input password to compare directly */
   char input_hex[(MAX_PASSWORD_LEN * 2) + 1] = {0};
-  size_t input_len = strlen(password);
+  int input_len = (int)strlen(password);
   if (input_len >= MAX_PASSWORD_LEN) {
     return 0;
   }
-  for (size_t i = 0; i < input_len; i++) {
+  for (int i = 0; i < input_len; i++) {
     unsigned char c = (unsigned char)password[i];
     unsigned char obfuscated = (unsigned char)(c ^ 0x5A);
     sprintf(input_hex + (i * 2), "%02X", obfuscated);
@@ -498,6 +597,8 @@ int run_admin_login_loop(void) {
   printf("Too many failed attempts! Returning to Customer Menu.\n");
   return 0;
 }
+
+
 
 int create_bundle(Bundle bundles[], int *count, const Bundle *new_bundle) {
   if (bundles == NULL || count == NULL || new_bundle == NULL) {
@@ -686,6 +787,8 @@ void display_all_bundles(const Bundle bundles[], int count,
   cont();
 }
 
+
+
 int save_database(const Product products[], int product_count,
                   const Bundle bundles[], int bundle_count,
                   const Order orders[], int order_count,
@@ -713,11 +816,418 @@ int load_database(Product products[], const int *product_count,
   return 0;
 }
 
-void display_customer_menu(void) {}
 
-void display_admin_menu(void) {}
 
-void run_menu_system(void) {}
+static Product products[MAX_PRODUCTS];
+static int product_count = 0;
+static Bundle bundles[MAX_BUNDLES];
+static int bundle_count = 0;
+static Order orders[MAX_ORDERS];
+static int order_count = 0;
+static AdminCredentials admin;
+
+void display_customer_menu(void) {
+  int choice = -1;
+  while (1) {
+    printf("\n==========================================\n");
+    printf("              CUSTOMER MENU               \n");
+    printf("==========================================\n");
+    printf("1. Browse Catalog\n");
+    printf("2. Search/Sort Products\n");
+    printf("3. Place Order\n");
+    printf("4. Switch to Admin Mode\n");
+    printf("0. Exit\n");
+    printf("------------------------------------------\n");
+
+    if (get_safe_int("Enter selection: ", &choice) == 0) {
+      printf("Goodbye!\n");
+      break;
+    }
+
+    if (choice == 0) {
+      printf("Goodbye!\n");
+      break;
+    }
+
+    switch (choice) {
+    case 1:
+      printf("\n--- Product Catalog ---\n");
+      display_all_products(products, product_count);
+      break;
+    case 2: {
+      int search_choice = -1;
+      while (1) {
+        printf("\n--- Search & Filter Products ---\n");
+        printf("1. Search by Name\n");
+        printf("2. Filter by Category\n");
+        printf("3. Filter by Price Range\n");
+        printf("0. Back\n");
+        printf("--------------------------------\n");
+
+        if (get_safe_int("Enter selection: ", &search_choice) == 0 ||
+            search_choice == 0) {
+          break;
+        }
+
+        switch (search_choice) {
+        case 1: {
+          char query[MAX_NAME_LEN] = {0};
+          get_safe_string("Enter search query (0 to cancel): ", query,
+                          MAX_NAME_LEN);
+          if (strcmp(query, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          search_product_by_name(products, product_count, query);
+          break;
+        }
+        case 2: {
+          char category[MAX_CAT_LEN] = {0};
+          get_safe_string("Enter category (0 to cancel): ", category,
+                          MAX_CAT_LEN);
+          if (strcmp(category, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          filter_product_by_category(products, product_count, category);
+          break;
+        }
+        case 3: {
+          float min_price = 0.0F;
+          float max_price = 0.0F;
+          if (get_safe_float("Enter min price (0 to cancel): ", &min_price) ==
+              0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          if (get_safe_float("Enter max price (0 to cancel): ", &max_price) ==
+              0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          filter_product_by_price(products, product_count, min_price,
+                                  max_price);
+          break;
+        }
+        default:
+          printf("Invalid option. Please try again.\n");
+          break;
+        }
+      }
+      break;
+    }
+    case 3:
+      printf("Order placement function is not implemented yet.\n");
+      break;
+    case 4: {
+      printf("\n--- Admin Login ---\n");
+      char username[MAX_USERNAME_LEN] = {0};
+      char password[MAX_PASSWORD_LEN] = {0};
+      int login_success = 0;
+      int attempts = 0;
+      while (attempts < 3) {
+        get_safe_string("Enter Username (0 to cancel): ", username,
+                        MAX_USERNAME_LEN);
+        if (strcmp(username, "0") == 0) {
+          break;
+        }
+        get_safe_string("Enter Password (0 to cancel): ", password,
+                        MAX_PASSWORD_LEN);
+        if (strcmp(password, "0") == 0) {
+          break;
+        }
+
+        if (verify_admin_login(username, password) != 0) {
+          printf("Login successful!\n");
+          login_success = 1;
+          break;
+        }
+
+        attempts++;
+        printf("Invalid credentials. Attempt %d/3 failed.\n", attempts);
+      }
+
+      if (attempts >= 3) {
+        printf("Too many failed attempts. Entry to Admin Mode locked for this "
+               "session.\n");
+      } else if (login_success != 0) {
+        display_admin_menu();
+      }
+      break;
+    }
+    default:
+      printf("Invalid option. Please try again.\n");
+      break;
+    }
+  }
+}
+
+void display_admin_menu(void) {
+  int choice = -1;
+  while (1) {
+    printf("\n==========================================\n");
+    printf("               ADMIN MENU                 \n");
+    printf("==========================================\n");
+    printf("1. Manage Products\n");
+    printf("2. Manage Bundles\n");
+    printf("3. View Revenue & Reports\n");
+    printf("4. Save Changes\n");
+    printf("0. Logout\n");
+    printf("------------------------------------------\n");
+
+    if (get_safe_int("Enter selection: ", &choice) == 0) {
+      printf("Logging out of admin mode...\n");
+      break;
+    }
+
+    if (choice == 0) {
+      printf("Logging out of admin mode...\n");
+      break;
+    }
+
+    switch (choice) {
+    case 1: {
+      int prod_choice = -1;
+      while (1) {
+        printf("\n--- Product Management Sub-Menu ---\n");
+        printf("1. View All Products\n");
+        printf("2. Add Product\n");
+        printf("3. Update Product\n");
+        printf("4. Delete Product\n");
+        printf("0. Back\n");
+        printf("-----------------------------------\n");
+
+        if (get_safe_int("Enter selection: ", &prod_choice) == 0 ||
+            prod_choice == 0) {
+          break;
+        }
+
+        switch (prod_choice) {
+        case 1:
+          display_all_products(products, product_count);
+          break;
+        case 2: {
+          printf("\n--- Add Product ---\n");
+          Product new_prod;
+          memset(&new_prod, 0, sizeof(new_prod));
+
+          if (get_safe_int("Enter Product ID (0 to cancel): ",
+                           &new_prod.product_id) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string("Enter Product Name (0 to cancel): ",
+                          new_prod.product_name, MAX_NAME_LEN);
+          if (strcmp(new_prod.product_name, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string(
+              "Enter Category (Phone/Laptop/Tablet/Accessory, 0 to cancel): ",
+              new_prod.category, MAX_CAT_LEN);
+          if (strcmp(new_prod.category, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string("Enter Brand (0 to cancel): ", new_prod.brand,
+                          MAX_BRAND_LEN);
+          if (strcmp(new_prod.brand, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (get_safe_float("Enter Price (0 to cancel): ", &new_prod.price) ==
+              0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (get_safe_int("Enter Stock Quantity (0 to cancel): ",
+                           &new_prod.stock_quantity) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (add_product(products, &product_count, &new_prod) != 0) {
+            printf("Product added successfully!\n");
+          } else {
+            printf("Failed to add product due to validation errors.\n");
+          }
+          break;
+        }
+        case 3: {
+          printf("\n--- Update Product ---\n");
+          int update_id = 0;
+          if (get_safe_int("Enter Product ID to Update (0 to cancel): ",
+                           &update_id) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          int index = find_product_by_id(products, product_count, update_id);
+          if (index == -1) {
+            printf("Error: Product ID %d not found.\n", update_id);
+            break;
+          }
+
+          Product updated;
+          memset(&updated, 0, sizeof(updated));
+
+          if (get_safe_int("Enter New Product ID (0 to cancel): ",
+                           &updated.product_id) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string("Enter New Product Name (0 to cancel): ",
+                          updated.product_name, MAX_NAME_LEN);
+          if (strcmp(updated.product_name, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string("Enter New Category (Phone/Laptop/Tablet/Accessory, "
+                          "0 to cancel): ",
+                          updated.category, MAX_CAT_LEN);
+          if (strcmp(updated.category, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          get_safe_string("Enter New Brand (0 to cancel): ", updated.brand,
+                          MAX_BRAND_LEN);
+          if (strcmp(updated.brand, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (get_safe_float("Enter New Price (0 to cancel): ",
+                             &updated.price) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (get_safe_int("Enter New Stock Quantity (0 to cancel): ",
+                           &updated.stock_quantity) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (update_product(products, product_count, update_id, &updated) !=
+              0) {
+            printf("Product updated successfully!\n");
+          } else {
+            printf("Failed to update product due to validation errors.\n");
+          }
+          break;
+        }
+        case 4: {
+          printf("\n--- Delete Product ---\n");
+          int delete_id = 0;
+          if (get_safe_int("Enter Product ID to Delete (0 to cancel): ",
+                           &delete_id) == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+
+          if (delete_product(products, &product_count, delete_id, bundles,
+                             bundle_count) != 0) {
+            printf("Product deleted successfully!\n");
+          } else {
+            printf("Failed to delete product.\n");
+          }
+          break;
+        }
+        default:
+          printf("Invalid option. Please try again.\n");
+          break;
+        }
+      }
+      break;
+    }
+    case 2:
+      printf("Bundle management is not implemented yet.\n");
+      break;
+    case 3:
+      printf("Revenue and reports are not implemented yet.\n");
+      break;
+    case 4:
+      if (save_database(products, product_count, bundles, bundle_count, orders,
+                        order_count, &admin) != 0) {
+        printf("Database saved successfully!\n");
+      } else {
+        printf("Database save completed.\n");
+      }
+      break;
+    default:
+      printf("Invalid option. Please try again.\n");
+      break;
+    }
+  }
+}
+
+void run_menu_system(void) {
+  load_database(products, &product_count, bundles, &bundle_count, orders,
+                &order_count, &admin);
+
+  /* Initialize sample products if empty */
+  if (product_count == 0) {
+    Product p1 = {101, "iPhone 15 Pro", "Phone", "Apple", 999.99F, 10};
+    Product p2 = {102, "ThinkPad X1 Carbon", "Laptop", "Lenovo", 1499.99F, 5};
+    Product p3 = {103, "iPad Air", "Tablet", "Apple", 599.99F, 8};
+    add_product(products, &product_count, &p1);
+    add_product(products, &product_count, &p2);
+    add_product(products, &product_count, &p3);
+  }
+
+  if (is_admin_setup_complete() == 0) {
+    printf("==========================================\n");
+    printf("        ADMIN CREDENTIALS SETUP           \n");
+    printf("==========================================\n");
+    char username[MAX_USERNAME_LEN] = {0};
+    char password[MAX_PASSWORD_LEN] = {0};
+    int setup_done = 0;
+    while (setup_done == 0) {
+      get_safe_string("Create Admin Username (0 to cancel): ", username,
+                      MAX_USERNAME_LEN);
+      if (strcmp(username, "0") == 0) {
+        printf("Setup cannot be cancelled. Admin setup is mandatory.\n");
+        continue;
+      }
+      get_safe_string("Create Admin Password (0 to cancel): ", password,
+                      MAX_PASSWORD_LEN);
+      if (strcmp(password, "0") == 0) {
+        printf("Setup cannot be cancelled. Admin setup is mandatory.\n");
+        continue;
+      }
+
+      if (strlen(username) < 4 || strchr(username, ' ') != NULL) {
+        printf("Invalid username. Must be at least 4 characters and contain no "
+               "spaces.\n");
+        continue;
+      }
+      if (strlen(password) < 4 || strchr(password, ' ') != NULL) {
+        printf("Invalid password. Must be at least 4 characters and contain no "
+               "spaces.\n");
+        continue;
+      }
+
+      if (setup_admin_credentials(username, password) != 0) {
+        printf("Admin credentials saved successfully!\n");
+        setup_done = 1;
+      } else {
+        printf("Error: Failed to write credentials file. Try again.\n");
+      }
+    }
+  }
+
+  display_customer_menu();
+}
+
+
 
 /* Static helper function prototypes */
 static int process_product_order(Product products[], int product_count,
@@ -931,6 +1441,8 @@ void print_revenue_report(const Order orders[], int order_count,
   printf("Total Revenue: $%.2f\n", (double)total_revenue);
 }
 
+
+
 /**
  * @brief Helper function to validate product Category.
  * @param category The string to validate.
@@ -1136,6 +1648,105 @@ void display_all_products(const Product products[], int count) {
   }
 }
 
+void search_product_by_name(const Product products[], int count,
+                            const char *query) {
+  if (products == NULL || count < 0 || query == NULL) {
+    return;
+  }
+  char query_lower[MAX_NAME_LEN];
+  strncpy(query_lower, query, sizeof(query_lower) - 1);
+  query_lower[sizeof(query_lower) - 1] = '\0';
+  to_lowercase(query_lower);
+
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    char name_lower[MAX_NAME_LEN];
+    strncpy(name_lower, products[i].product_name, sizeof(name_lower) - 1);
+    name_lower[sizeof(name_lower) - 1] = '\0';
+    to_lowercase(name_lower);
+
+    if (strstr(name_lower, query_lower) != NULL) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
+  }
+}
+
+void filter_product_by_category(const Product products[], int count,
+                                const char *category) {
+  if (products == NULL || count < 0 || category == NULL) {
+    return;
+  }
+  if (strcmp(category, "Phone") != 0 && strcmp(category, "Laptop") != 0 &&
+      strcmp(category, "Tablet") != 0 && strcmp(category, "Accessory") != 0) {
+    printf("No products found.\n");
+    return;
+  }
+
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    if (strcmp(products[i].category, category) == 0) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
+  }
+}
+
+void filter_product_by_price(const Product products[], int count,
+                             float min_price, float max_price) {
+  if (products == NULL || count < 0) {
+    return;
+  }
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    if (products[i].price >= min_price && products[i].price <= max_price) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
+  }
+}
+
+
+
 void clear_input_buffer(void) {
   int c;
   while ((c = getchar()) != '\n' && c != EOF) {
@@ -1164,7 +1775,7 @@ void get_safe_string(const char *prompt, char *out_str, int max_len) {
     out_str[0] = '\0';
     return;
   }
-  size_t len = strlen(out_str);
+  int len = (int)strlen(out_str);
   if (len > 0 && out_str[len - 1] == '\n') {
     out_str[len - 1] = '\0';
   } else {
@@ -1184,30 +1795,67 @@ int get_safe_int(const char *prompt, int *out_value) {
       return 0;
     }
 
-    char *endptr;
-    errno = 0;
-    long val = strtol(buf, &endptr, 10);
+    int i = 0;
+    // Skip leading whitespace
+    while (buf[i] != '\0' && (buf[i] == ' ' || buf[i] == '\t' ||
+                              buf[i] == '\n' || buf[i] == '\r')) {
+      i++;
+    }
 
-    if (endptr == buf) {
+    if (buf[i] == '\0') {
       printf("Invalid entry, please try again.\n");
       continue;
     }
 
-    while (*endptr != '\0' && isspace((unsigned char)*endptr)) {
-      endptr++;
+    int sign = 1;
+    if (buf[i] == '-') {
+      sign = -1;
+      i++;
+    } else if (buf[i] == '+') {
+      i++;
     }
-    if (*endptr != '\0') {
+
+    if (buf[i] < '0' || buf[i] > '9') {
       printf("Invalid entry, please try again.\n");
       continue;
     }
 
-    if (errno == ERANGE || val < INT_MIN || val > INT_MAX) {
+    long long val = 0;
+    int overflow = 0;
+    while (buf[i] >= '0' && buf[i] <= '9') {
+      val = (val * 10) + (buf[i] - '0');
+      // Detect overflow of 32-bit signed int (Max: 2147483647, Min:
+      // -2147483648)
+      if (sign == 1 && val > 2147483647LL) {
+        val = 2147483647LL;
+        overflow = 1;
+      } else if (sign == -1 && val > 2147483648LL) {
+        val = 2147483648LL;
+        overflow = 1;
+      }
+      i++;
+    }
+
+    // Skip trailing whitespace
+    while (buf[i] != '\0' && (buf[i] == ' ' || buf[i] == '\t' ||
+                              buf[i] == '\n' || buf[i] == '\r')) {
+      i++;
+    }
+
+    if (buf[i] != '\0' || overflow) {
       printf("Invalid entry, please try again.\n");
       continue;
+    }
+
+    int final_val;
+    if (sign == -1) {
+      final_val = (int)(-val);
+    } else {
+      final_val = (int)val;
     }
 
     if (out_value != NULL) {
-      *out_value = (int)val;
+      *out_value = final_val;
     }
     return 1;
   }
@@ -1225,27 +1873,72 @@ int get_safe_float(const char *prompt, float *out_value) {
       return 0;
     }
 
-    char *endptr;
-    errno = 0;
-    double val = strtod(buf, &endptr);
+    int i = 0;
+    // Skip leading whitespace
+    while (buf[i] != '\0' && (buf[i] == ' ' || buf[i] == '\t' ||
+                              buf[i] == '\n' || buf[i] == '\r')) {
+      i++;
+    }
 
-    if (endptr == buf) {
+    if (buf[i] == '\0') {
       printf("Invalid entry, please try again.\n");
       continue;
     }
 
-    while (*endptr != '\0' && isspace((unsigned char)*endptr)) {
-      endptr++;
+    int sign = 1;
+    if (buf[i] == '-') {
+      sign = -1;
+      i++;
+    } else if (buf[i] == '+') {
+      i++;
     }
-    if (*endptr != '\0') {
+
+    if ((buf[i] < '0' || buf[i] > '9') && buf[i] != '.') {
       printf("Invalid entry, please try again.\n");
       continue;
     }
 
-    if (errno == ERANGE) {
+    double integer_part = 0.0;
+    int has_digits = 0;
+    while (buf[i] >= '0' && buf[i] <= '9') {
+      integer_part = (integer_part * 10.0) + (buf[i] - '0');
+      has_digits = 1;
+      i++;
+    }
+
+    double fractional_part = 0.0;
+    double divisor = 1.0;
+    if (buf[i] == '.') {
+      i++;
+      if ((buf[i] < '0' || buf[i] > '9') && !has_digits) {
+        printf("Invalid entry, please try again.\n");
+        continue;
+      }
+      while (buf[i] >= '0' && buf[i] <= '9') {
+        fractional_part = (fractional_part * 10.0) + (buf[i] - '0');
+        divisor *= 10.0;
+        has_digits = 1;
+        i++;
+      }
+    }
+
+    if (!has_digits) {
       printf("Invalid entry, please try again.\n");
       continue;
     }
+
+    // Skip trailing whitespace
+    while (buf[i] != '\0' && (buf[i] == ' ' || buf[i] == '\t' ||
+                              buf[i] == '\n' || buf[i] == '\r')) {
+      i++;
+    }
+
+    if (buf[i] != '\0') {
+      printf("Invalid entry, please try again.\n");
+      continue;
+    }
+
+    double val = sign * (integer_part + (fractional_part / divisor));
 
     if (out_value != NULL) {
       *out_value = (float)val;
@@ -1258,7 +1951,13 @@ void input_string(char *str, int size) {
     str[0] = '\0';
     return;
   }
-  str[strcspn(str, "\n")] = '\0';
+  int len = (int)strlen(str);
+  for (int i = 0; i < len; i++) {
+    if (str[i] == '\n' || str[i] == '\r') {
+      str[i] = '\0';
+      break;
+    }
+  }
 }
 
 void cont(void) {
@@ -1273,8 +1972,11 @@ int confirm_action(const char *message) {
   return (choice[0] == 'Y' || choice[0] == 'y');
 }
 
+
+
 int main(void) {
   printf("E-Commerce Electronics & Bundle Management System\n");
   run_menu_system();
   return 0;
 }
+

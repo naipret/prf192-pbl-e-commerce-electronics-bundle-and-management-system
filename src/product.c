@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "product.h"
+#include "utils.h"
 
 /**
  * @brief Helper function to validate product Category.
@@ -205,5 +206,102 @@ void display_all_products(const Product products[], int count) {
            products[i].product_id, products[i].product_name,
            products[i].category, products[i].brand, (double)products[i].price,
            products[i].stock_quantity);
+  }
+}
+
+void search_product_by_name(const Product products[], int count,
+                            const char *query) {
+  if (products == NULL || count < 0 || query == NULL) {
+    return;
+  }
+  char query_lower[MAX_NAME_LEN];
+  strncpy(query_lower, query, sizeof(query_lower) - 1);
+  query_lower[sizeof(query_lower) - 1] = '\0';
+  to_lowercase(query_lower);
+
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    char name_lower[MAX_NAME_LEN];
+    strncpy(name_lower, products[i].product_name, sizeof(name_lower) - 1);
+    name_lower[sizeof(name_lower) - 1] = '\0';
+    to_lowercase(name_lower);
+
+    if (strstr(name_lower, query_lower) != NULL) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
+  }
+}
+
+void filter_product_by_category(const Product products[], int count,
+                                const char *category) {
+  if (products == NULL || count < 0 || category == NULL) {
+    return;
+  }
+  if (strcmp(category, "Phone") != 0 && strcmp(category, "Laptop") != 0 &&
+      strcmp(category, "Tablet") != 0 && strcmp(category, "Accessory") != 0) {
+    printf("No products found.\n");
+    return;
+  }
+
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    if (strcmp(products[i].category, category) == 0) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
+  }
+}
+
+void filter_product_by_price(const Product products[], int count,
+                             float min_price, float max_price) {
+  if (products == NULL || count < 0) {
+    return;
+  }
+  int found = 0;
+  for (int i = 0; i < count; i++) {
+    if (products[i].price >= min_price && products[i].price <= max_price) {
+      if (!found) {
+        printf("%-6s | %-30s | %-12s | %-20s | %-10s | %-8s\n", "ID", "Name",
+               "Category", "Brand", "Price", "Stock");
+        printf("---------------------------------------------------------------"
+               "------"
+               "--------------------------------\n");
+        found = 1;
+      }
+      printf("%-6d | %-30s | %-12s | %-20s | $%-9.2f | %-8d\n",
+             products[i].product_id, products[i].product_name,
+             products[i].category, products[i].brand, (double)products[i].price,
+             products[i].stock_quantity);
+    }
+  }
+  if (!found) {
+    printf("No products found.\n");
   }
 }

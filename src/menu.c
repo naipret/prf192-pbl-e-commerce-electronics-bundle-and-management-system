@@ -45,9 +45,68 @@ void display_customer_menu(void) {
       printf("\n--- Product Catalog ---\n");
       display_all_products(products, product_count);
       break;
-    case 2:
-      printf("Search/Sort function is not implemented yet.\n");
+    case 2: {
+      int search_choice = -1;
+      while (1) {
+        printf("\n--- Search & Filter Products ---\n");
+        printf("1. Search by Name\n");
+        printf("2. Filter by Category\n");
+        printf("3. Filter by Price Range\n");
+        printf("0. Back\n");
+        printf("--------------------------------\n");
+
+        if (get_safe_int("Enter selection: ", &search_choice) == 0 ||
+            search_choice == 0) {
+          break;
+        }
+
+        switch (search_choice) {
+        case 1: {
+          char query[MAX_NAME_LEN] = {0};
+          get_safe_string("Enter search query (0 to cancel): ", query,
+                          MAX_NAME_LEN);
+          if (strcmp(query, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          search_product_by_name(products, product_count, query);
+          break;
+        }
+        case 2: {
+          char category[MAX_CAT_LEN] = {0};
+          get_safe_string("Enter category (0 to cancel): ", category,
+                          MAX_CAT_LEN);
+          if (strcmp(category, "0") == 0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          filter_product_by_category(products, product_count, category);
+          break;
+        }
+        case 3: {
+          float min_price = 0.0F;
+          float max_price = 0.0F;
+          if (get_safe_float("Enter min price (0 to cancel): ", &min_price) ==
+              0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          if (get_safe_float("Enter max price (0 to cancel): ", &max_price) ==
+              0) {
+            printf("Action cancelled.\n");
+            break;
+          }
+          filter_product_by_price(products, product_count, min_price,
+                                  max_price);
+          break;
+        }
+        default:
+          printf("Invalid option. Please try again.\n");
+          break;
+        }
+      }
       break;
+    }
     case 3:
       printf("Order placement function is not implemented yet.\n");
       break;
