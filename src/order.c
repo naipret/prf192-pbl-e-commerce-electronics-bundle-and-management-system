@@ -202,7 +202,7 @@ void print_revenue_report(const Order orders[], int order_count,
   (void)product_count;
   (void)bundles;
   (void)bundle_count;
-
+  int product_sold = 0, bundle_sold = 0;
   if (orders == NULL || order_count <= 0) {
     printf("\n--- REVENUE REPORT ---\n");
     printf("Total Orders: 0\n");
@@ -211,9 +211,13 @@ void print_revenue_report(const Order orders[], int order_count,
   }
   float total_revenue = 0.0F;
   for (int i = 0; i < order_count; i++) {
+    if(orders[i].is_bundle == 0) product_sold++;
+    else bundle_sold++;
     total_revenue += orders[i].total_price;
   }
   printf("\n--- REVENUE REPORT ---\n");
   printf("Total Orders: %d\n", order_count);
   printf("Total Revenue: $%.2f\n", (double)total_revenue);
+  printf("Total count of products sold: %d\n", product_sold);
+  printf("Total count of bundles sold: %d\n", bundle_sold);
 }
