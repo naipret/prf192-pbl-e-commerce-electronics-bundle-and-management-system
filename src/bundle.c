@@ -192,3 +192,17 @@ void display_all_bundles(const Bundle bundles[], int count,
   printf("%s\n", border);
   cont();
 }
+
+
+int find_bundle_by_id(const Bundle bundles[], int count, int id){
+  if (bundles == NULL || count < 0 || id <= 0) {
+    return -1;
+  }
+  for (int i = 0; i < count; i++) {
+    if (bundles[i].bundle_id == id) {
+      return i;
+    }
+  }
+  return -1;
+
+}
