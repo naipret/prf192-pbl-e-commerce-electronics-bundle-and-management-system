@@ -48,13 +48,12 @@ void print_revenue_report(const Order orders[], int order_count,
                           const Product products[], int product_count,
                           const Bundle bundles[], int bundle_count);
 
-
 void print_best_seller_products(const Order orders[], int order_count,
-                          const Product products[], int product_count);
+                                const Product products[], int product_count,
+                                const Bundle bundles[], int bundle_count);
 
+void print_best_seller_bundles(const Order orders[], int order_count,
+                               const Bundle bundles[], int bundle_count);
 
-void print_best_seller_bundles(const Order orders[], int order_count, 
-                          const Bundle bundles[], int bundle_count);
-
-void alert_low_stock(const Product products[],int product_count);
+void alert_low_stock(const Product products[], int product_count);
 #endif /* ORDER_H */
