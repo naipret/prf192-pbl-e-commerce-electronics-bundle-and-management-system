@@ -131,9 +131,62 @@ void display_customer_menu(void) {
       }
       break;
     }
-    case 3:
-      printf("Order placement function is not implemented yet.\n");
+    case 3: {
+      printf("\n--- Place Order ---\n");
+      Order new_ord;
+      memset(&new_ord, 0, sizeof(new_ord));
+
+      get_safe_string("Enter Customer Name (0 to cancel): ",
+                      new_ord.customer_name, MAX_NAME_LEN);
+      if (strcmp(new_ord.customer_name, "0") == 0) {
+        printf("Action cancelled.\n");
+        break;
+      }
+
+      int is_bundle_choice = -1;
+      int cancelled = 0;
+      while (1) {
+        if (get_safe_int("Is this a Bundle order? (1 for Bundle, 2 for "
+                         "Product, 0 to cancel): ",
+                         &is_bundle_choice) == 0 ||
+            is_bundle_choice == 0) {
+          printf("Action cancelled.\n");
+          cancelled = 1;
+          break;
+        }
+        if (is_bundle_choice == 1 || is_bundle_choice == 2) {
+          new_ord.is_bundle = (is_bundle_choice == 1) ? 1 : 0;
+          break;
+        }
+        printf("Invalid entry, please try again.\n");
+      }
+      if (cancelled != 0) {
+        break;
+      }
+
+      if (get_safe_int("Enter Item ID to order (0 to cancel): ",
+                       &new_ord.item_id) == 0 ||
+          new_ord.item_id == 0) {
+        printf("Action cancelled.\n");
+        break;
+      }
+
+      if (get_safe_int("Enter Quantity (0 to cancel): ", &new_ord.quantity) ==
+              0 ||
+          new_ord.quantity == 0) {
+        printf("Action cancelled.\n");
+        break;
+      }
+
+      if (create_order(orders, &order_count, products, product_count, bundles,
+                       bundle_count, &new_ord) != 0) {
+        printf("Order placed successfully!\n");
+      } else {
+        printf("Failed to place order due to validation errors.\n");
+      }
+      cont();
       break;
+    }
     case 4: {
       printf("\n--- Admin Login ---\n");
       char username[MAX_USERNAME_LEN] = {0};
