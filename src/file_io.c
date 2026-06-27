@@ -73,6 +73,20 @@ static int read_float_file(FILE *f, float *out) {
   return 1;
 }
 
+static int is_file_non_empty(const char *path) {
+  FILE *f = fopen(path, "r");
+  if (f == NULL) {
+    return 0;
+  }
+  if (fseek(f, 0, SEEK_END) != 0) {
+    fclose(f);
+    return 0;
+  }
+  long size = ftell(f);
+  fclose(f);
+  return size > 0 ? 1 : 0;
+}
+
 /**
  * @brief Performs the transactional rename of active and backup database files.
  * Removes the old backup if it exists, renames active to backup, and promotes
@@ -84,8 +98,10 @@ static int read_float_file(FILE *f, float *out) {
  */
 static int commit_transaction(const char *active_path, const char *tmp_path,
                               const char *bak_path) {
+  int active_existed = 0;
   FILE *f = fopen(active_path, "r");
   if (f != NULL) {
+    active_existed = 1;
     fclose(f);
     remove(bak_path);
     if (rename(active_path, bak_path) != 0) {
@@ -94,7 +110,7 @@ static int commit_transaction(const char *active_path, const char *tmp_path,
   }
   remove(active_path);
   if (rename(tmp_path, active_path) != 0) {
-    if (f != NULL) {
+    if (active_existed != 0) {
       (void)rename(bak_path, active_path);
     }
     return 0;
@@ -290,11 +306,11 @@ static int load_admin_internal(AdminCredentials *admin, const char *filename) {
   AdminCredentials a;
   memset(&a, 0, sizeof(AdminCredentials));
   if (!read_line_file(f, a.username, sizeof(a.username)) ||
-      !read_line_file(f, a.password, sizeof(a.password)) ||
-      !read_int_file(f, &a.is_setup)) {
+      !read_line_file(f, a.password, sizeof(a.password))) {
     fclose(f);
     return 0;
   }
+  a.is_setup = 1;
   *admin = a;
   fclose(f);
   return 1;
@@ -334,6 +350,10 @@ int save_database(const Product products[], int product_count,
     fprintf(fp, "%d\n", products[i].stock_quantity);
   }
   fclose(fp);
+  if (!is_file_non_empty("products.tmp")) {
+    remove("products.tmp");
+    return 0;
+  }
 
   /* 2. Write Bundles to bundles.tmp */
   FILE *fb = fopen("bundles.tmp", "w");
@@ -353,6 +373,11 @@ int save_database(const Product products[], int product_count,
     }
   }
   fclose(fb);
+  if (!is_file_non_empty("bundles.tmp")) {
+    remove("products.tmp");
+    remove("bundles.tmp");
+    return 0;
+  }
 
   /* 3. Write Orders to orders.tmp */
   FILE *fo = fopen("orders.tmp", "w");
@@ -372,6 +397,12 @@ int save_database(const Product products[], int product_count,
     fprintf(fo, "%s\n", orders[i].order_date);
   }
   fclose(fo);
+  if (!is_file_non_empty("orders.tmp")) {
+    remove("products.tmp");
+    remove("bundles.tmp");
+    remove("orders.tmp");
+    return 0;
+  }
 
   /* 4. Write Admin credentials to admin.tmp */
   FILE *fa = fopen("admin.tmp", "w");
@@ -381,10 +412,34 @@ int save_database(const Product products[], int product_count,
     remove("orders.tmp");
     return 0;
   }
-  fprintf(fa, "%s\n", admin->username);
-  fprintf(fa, "%s\n", admin->password);
-  fprintf(fa, "%d\n", admin->is_setup);
+  if (admin->username[0] == '\0') {
+    FILE *f_exist = fopen("admin.txt", "r");
+    if (f_exist != NULL) {
+      char temp_user[MAX_USERNAME_LEN] = {0};
+      char temp_pass[(MAX_PASSWORD_LEN * 2) + 2] = {0};
+      if (fgets(temp_user, (int)sizeof(temp_user), f_exist) != NULL &&
+          fgets(temp_pass, (int)sizeof(temp_pass), f_exist) != NULL) {
+        fprintf(fa, "%s", temp_user);
+        fprintf(fa, "%s", temp_pass);
+      } else {
+        fprintf(fa, "\n\n");
+      }
+      fclose(f_exist);
+    } else {
+      fprintf(fa, "\n\n");
+    }
+  } else {
+    fprintf(fa, "%s\n", admin->username);
+    fprintf(fa, "%s\n", admin->password);
+  }
   fclose(fa);
+  if (!is_file_non_empty("admin.tmp")) {
+    remove("products.tmp");
+    remove("bundles.tmp");
+    remove("orders.tmp");
+    remove("admin.tmp");
+    return 0;
+  }
 
   /* 5. Commit transactions for all database files */
   int success = 1;
