@@ -43,7 +43,6 @@ int create_bundle(Bundle bundles[], int *count, const Bundle *new_bundle) {
   }
 
   bundles[*count] = *new_bundle;
-  bundles[*count].total_sold = 0;
   (*count)++;
   return 1;
 }
@@ -193,8 +192,7 @@ void display_all_bundles(const Bundle bundles[], int count,
   cont();
 }
 
-
-int find_bundle_by_id(const Bundle bundles[], int count, int id){
+int find_bundle_by_id(const Bundle bundles[], int count, int id) {
   if (bundles == NULL || count < 0 || id <= 0) {
     return -1;
   }
@@ -204,5 +202,4 @@ int find_bundle_by_id(const Bundle bundles[], int count, int id){
     }
   }
   return -1;
-
 }
